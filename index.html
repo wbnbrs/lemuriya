@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лемурия — энциклопедия острова: духи ночи, ставшие королями экрана</title>
+<meta name="description" content="Лемурия — научно-популярная энциклопедия о лемурах Мадагаскара: виды, эволюция, статьи, кино, галерея и факты. Интересно школьникам и взрослым.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐒</text></svg>">
+
+<!-- Шрифты: Playfair Display (заголовки, кириллица) + Manrope (текст, кириллица) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;0,900;1,500;1,600;1,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="">
+
+<!-- Tailwind CSS (Play CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        night:  '#090e0b',
+        coal:   '#0d1411',
+        panel:  '#121b16',
+        ink:    '#eef2ea',
+        mist:   '#93a190',
+        fern: {
+          50:'#f2f7ec',100:'#e3eed8',200:'#caddb8',300:'#b9d49b',400:'#a3c585',
+          500:'#8bb26c',600:'#6f9754',700:'#577a40',800:'#425e31',900:'#314524',950:'#1c2b13'
+        },
+        sun:   '#e07b39',
+        ember: '#c2573b',
+        sage:  '#a3c585'
+      },
+      fontFamily: {
+        display: ['Playfair Display', 'Georgia', 'serif'],
+        body: ['Manrope', 'system-ui', 'sans-serif']
+      },
+      boxShadow: {
+        glow: '0 0 40px -8px rgba(224,123,57,.45)'
+      }
+    }
+  }
+}
+</script>
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-night text-ink font-body antialiased overflow-x-hidden">
+
+<!-- ============ ПРЕЛОАДЕР ============ -->
+<div id="loader" class="fixed inset-0 z-[100] bg-night flex flex-col items-center justify-center gap-6 transition-opacity duration-700">
+  <div class="relative w-28 h-28">
+    <div class="absolute inset-0 rounded-full border border-sage/20 animate-spin" style="animation-duration:2.6s"></div>
+    <div class="absolute inset-2 rounded-full border border-t-transparent border-sun/60 animate-spin" style="animation-duration:1.5s"></div>
+    <div class="absolute inset-0 flex items-center justify-center text-5xl animate-bounce" style="animation-duration:1.2s">🐒</div>
+  </div>
+  <div class="text-center">
+    <div class="text-3xl italic tracking-wide" id="loaderText" style="font-family:'Playfair Display',serif">Лемурия</div>
+    <div class="mt-2 text-mist text-[11px] tracking-[.4em] uppercase">остров духов открывается…</div>
+  </div>
+  <div class="w-56 h-[3px] bg-white/5 overflow-hidden">
+    <div id="loaderFill" class="h-full w-0 bg-gradient-to-r from-sage via-sun to-ember transition-all duration-300"></div>
+  </div>
+</div>
+
+<!-- ============ ПРОГРЕСС СКРОЛЛА ============ -->
+<div id="progressBar" class="fixed top-0 left-0 h-[3px] w-0 z-[90] bg-gradient-to-r from-sage via-sun to-ember"></div>
+
+<!-- ============ ШАПКА ============ -->
+<header id="nav" class="fixed top-0 inset-x-0 z-[80]">
+  <nav class="max-w-[1440px] mx-auto px-5 lg:px-8 flex items-center justify-between h-16 lg:h-[72px]">
+    <a href="#hero" class="flex items-center gap-3 group">
+      <span class="w-10 h-10 rounded-full border border-sun/50 bg-sun/10 flex items-center justify-center text-2xl group-hover:rotate-6 transition-transform">🐒</span>
+      <span class="text-xl tracking-wide" style="font-family:'Playfair Display',serif"><span class="italic font-bold">Лемурия</span></span>
+    </a>
+    <ul class="hidden xl:flex items-center gap-1" id="navMenu"></ul>
+    <div class="flex items-center gap-3">
+      <a href="#articles" class="hidden md:inline-flex items-center gap-2 px-4 py-2.5 bg-sun text-night text-[11px] font-extrabold tracking-[.18em] uppercase hover:shadow-glow transition-all">
+        <span data-lucide="book-open" class="w-4 h-4"></span> Научные статьи
+      </a>
+      <button id="burger" class="xl:hidden w-10 h-10 rounded-full border border-white/15 flex flex-col items-center justify-center gap-1.5">
+        <span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span>
+      </button>
+    </div>
+  </nav>
+  <!-- мобильное меню -->
+  <div id="mobileMenu" class="xl:hidden hidden bg-coal/95 backdrop-blur-2xl border-b border-white/5 max-h-[75vh] overflow-y-auto">
+    <ul class="p-6 grid gap-1 text-base" id="mobileMenuList"></ul>
+  </div>
+</header>
+
+<!-- ============ БОКОВАЯ НАВИГАЦИЯ-РЕЙЛ (desktop) ============ -->
+<!-- ============ ГЛАВНЫЙ ЭКРАН ============ -->
+<section id="hero" class="relative min-h-screen flex items-end overflow-hidden">
+  <!-- фото-фон -->
+  <div class="absolute inset-0 hero-bg">
+    <img id="heroPhoto" src="https://images.unsplash.com/photo-1617716801119-894d479a3be9?q=80&w=1920&auto=format&fit=crop" alt="Кольцехвостый лемур на скале" class="absolute inset-x-0 -top-[7%] w-full h-[114%] object-cover">
+  </div>
+  <div class="absolute inset-0 bg-gradient-to-t from-night via-night/55 to-night/25"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-night/85 via-transparent to-night/40"></div>
+  <!-- 3D canvas -->
+  <canvas id="heroCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+  <!-- контент -->
+  <div class="relative z-10 max-w-[1440px] mx-auto w-full px-5 lg:px-8 pb-24 lg:pb-28 pt-44">
+    <div class="max-w-3xl">
+      <div class="hero-reveal inline-flex items-center gap-3 text-[11px] tracking-[.4em] uppercase text-sun font-extrabold">
+        <span class="w-8 h-px bg-sun"></span> Мадагаскар · 110+ видов · 40 миллионов лет изоляции
+      </div>
+      <h1 class="hero-reveal mt-7 leading-[1.06] font-bold" style="font-family:'Playfair Display',serif;font-size:clamp(2.7rem,7vw,5.9rem)">
+        Духи ночи,<br>ставшие <em class="italic text-sun">королями экрана</em>
+      </h1>
+      <p class="hero-reveal mt-7 text-lg lg:text-xl text-mist max-w-2xl leading-relaxed">
+        Их называли призраками, их боялись и обожали. Двести лет назад о них не знал никто,
+        а сегодня они — герои науки, мультфильмов и мемов. Энциклопедия острова, которая
+        читается как роман: от 30-граммового мышиного лемура до поющего индри.
+      </p>
+      <div class="hero-reveal mt-9 flex flex-wrap gap-4">
+        <a href="#articles" class="btn-primary">Читать статьи <span data-lucide="arrow-down" class="w-4 h-4"></span></a>
+        <a href="#movies" class="btn-ghost">Где их снимали <span data-lucide="clapperboard" class="w-4 h-4"></span></a>
+      </div>
+      <div id="heroStats" class="hero-reveal mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl"></div>
+    </div>
+  </div>
+  <!-- подсказка скролла -->
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-mist text-[10px] tracking-[.4em] uppercase">
+    <span>листай</span>
+    <span class="w-5 h-9 rounded-full border border-white/20 flex justify-center pt-1.5"><span class="scroll-dot w-1 h-1.5 rounded-full bg-sun"></span></span>
+  </div>
+</section>
+
+<!-- ============ БЕГУЩАЯ СТРОКА ============ -->
+<div class="relative bg-coal border-y border-white/5 py-3.5 overflow-hidden">
+  <div id="marqueeTrack" class="marquee-track flex items-center gap-8 whitespace-nowrap"></div>
+</div>
+
+<!-- ============ 01 ПОЧЕМУ МЫ ИХ ЛЮБИМ ============ -->
+<section id="love" class="section relative">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <div>
+        <span class="sec-tag">Психология обаяния</span>
+        <h2>Почему мы влюбились в лемуров</h2>
+        <p class="sec-lead">Наука говорит: у них есть всё, что включает у человека «режим умиления». Разбираем по пунктам — с фотодоказательствами.</p>
+      </div>
+    </div>
+    <div id="loveGrid" class="grid md:grid-cols-2 xl:grid-cols-4 gap-5 mt-12"></div>
+  </div>
+</section>
+
+<!-- ============ 02 ИСТОРИЯ ЛЮБВИ (таймлайн) ============ -->
+<section id="timeline" class="section relative bg-coal/40">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <div>
+        <span class="sec-tag">1658 — наши дни</span>
+        <h2>История любви: четыре века</h2>
+        <p class="sec-lead">От «призраков острова» в записках мореплавателя — до героев мирового проката и вирусных роликов.</p>
+      </div>
+    </div>
+    <div id="timeline" class="relative mt-14"></div>
+  </div>
+</section>
+
+<!-- ============ 03 ОСТРОВ ============ -->
+<section id="island" class="section relative">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <div>
+        <span class="sec-tag">Мадагаскар · карта ареалов</span>
+        <h2>Остров, который сделал лемуров</h2>
+        <p class="sec-lead">Четвёртый по величине остров планеты. 40 миллионов лет изоляции — и ни одного конкурента. Ниже — главные лемуровые адреса острова.</p>
+      </div>
+    </div>
+
+    <div class="mt-12 grid lg:grid-cols-2 gap-8 items-stretch">
+      <!-- плот -->
+      <div class="glass rounded-xl p-7 lg:p-9 relative overflow-hidden flex flex-col">
+        <img src="https://images.unsplash.com/photo-1558694314-3d3bc709fc1c?q=80&w=1200&auto=format&fit=crop" alt="Баобабы Мадагаскара" class="absolute inset-0 w-full h-full object-cover opacity-20" loading="lazy">
+        <div class="absolute inset-0 bg-gradient-to-t from-night/90 to-night/30"></div>
+        <div class="relative">
+          <div class="text-[10px] tracking-[.3em] uppercase text-sun font-extrabold mb-2">Дрейф длиной в миллионы лет</div>
+          <h3 class="font-display font-bold text-2xl">Плот, изменивший всё</h3>
+          <p class="mt-4 text-mist leading-relaxed">
+            ~50–40 млн лет назад предки лемуров пересекли Мозамбикский пролив — по расчётам учёных,
+            на плавучих «плотах» из спутанных деревьев, вырванных штормом с берега Африки.
+            До Мадагаскара добралась одна-единственная беременная самка — или маленькая стайка.
+            Этого хватило: остров стал лабораторией, где из нескольких «пассажиров» вышло 110+ видов.
+          </p>
+          <div class="mt-6 grid sm:grid-cols-3 gap-4" id="islandStats"></div>
+        </div>
+      </div>
+      <!-- карта -->
+      <div class="glass rounded-xl p-7 lg:p-9">
+        <h3 class="font-display font-bold text-xl flex items-center gap-2">🗺️ Где кто живёт</h3>
+        <p class="mt-2 text-mist text-sm">Интерактивная карта: ареалы пяти знаменитых видов и главные национальные парки. Включайте слои кнопками.</p>
+        <div id="mapToggles" class="mt-4 flex flex-wrap gap-2"></div>
+        <div id="leafletMap" class="mt-4 rounded-lg overflow-hidden border border-white/10" style="height:420px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 ВИДЫ ============ -->
+<section id="species" class="section relative bg-coal/40">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <div>
+        <span class="sec-tag">5 семейств · 110+ видов</span>
+        <h2>Короли во всех размерах</h2>
+        <p class="sec-lead">От 30-граммового мышиного лемура до 9-килограммового индри. Фильтруйте карточки по семействам. <span class="text-mist/80">Фото каждого вида — Wikimedia Commons (свободные лицензии CC), изображение соответствует виду.</span></p>
+      </div>
+    </div>
+    <div id="speciesFilters" class="mt-10 flex flex-wrap gap-2"></div>
+    <div id="speciesGrid" class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+</section>
+
+<!-- ============ 05 НАУКА ============ -->
+<section id="science" class="section relative">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">05</span>
+      <div>
+        <span class="sec-tag">Данные · графики · древо</span>
+        <h2>Наука: цифры и древо жизни</h2>
+        <p class="sec-lead">Суперспособности видов, статусы угроз и филогенетическое древо лемуров — кликайте по диаграмме, она живая.</p>
+      </div>
+    </div>
+
+    <div class="mt-12 grid lg:grid-cols-3 gap-6">
+      <div class="chart-card">
+        <div class="flex items-center justify-between">
+          <h3 class="chart-title">Профили суперспособностей</h3><span class="emoji-badge">🦸</span>
+        </div>
+        <div class="h-[320px] relative"><canvas id="radarChart"></canvas></div>
+        <p class="chart-note">Субъективная оценка авторов по 10-балльной шкале: четыре культовых вида.</p>
+      </div>
+      <div class="chart-card">
+        <div class="flex items-center justify-between">
+          <h3 class="chart-title">Видов по семействам</h3><span class="emoji-badge">📊</span>
+        </div>
+        <div class="h-[320px] relative"><canvas id="barChart"></canvas></div>
+        <p class="chart-note">Современная таксономия: число описанных видов.</p>
+      </div>
+      <div class="chart-card">
+        <div class="flex items-center justify-between">
+          <h3 class="chart-title">Статусы по МСОП</h3><span class="emoji-badge">🚨</span>
+        </div>
+        <div class="h-[320px] relative"><canvas id="doughnutChart"></canvas></div>
+        <p class="chart-note">Оценка 2020 года: 98% лемуров под угрозой — рекорд среди млекопитающих.</p>
+      </div>
+    </div>
+
+    <div class="chart-card mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="chart-title">Филогенетическое древо лемуров</h3>
+          <p class="text-mist text-sm mt-1">Кликните по сегменту, чтобы приблизиться. Чем больше сектор — тем больше видов в группе.</p>
+        </div>
+        <span class="emoji-badge">🌳</span>
+      </div>
+      <div id="sunburstBox" class="relative mt-4 rounded-lg bg-night/60 border border-white/5">
+        <div id="sunburst" class="w-full" style="height:560px"></div>
+        <div id="sunburstTooltip" class="sunburst-tip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 СТАТЬИ ============ -->
+<section id="articles" class="section relative bg-coal/40">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">06</span>
+      <div>
+        <span class="sec-tag">Научно-популярные материалы</span>
+        <h2>Статьи: читать и удивляться</h2>
+        <p class="sec-lead">Двенадцать разборов по самым любопытным темам — от матриархата до цианида на завтрак. Нажмите на карточку, чтобы раскрыть статью целиком — с источниками.</p>
+      </div>
+    </div>
+    <div id="articlesGrid" class="mt-12 grid md:grid-cols-2 xl:grid-cols-4 gap-5"></div>
+  </div>
+</section>
+
+<!-- ============ 07 КИНО (горизонтальная лента) ============ -->
+<section id="movies" class="relative bg-coal/40 py-24 lg:py-28">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">07</span>
+      <div>
+        <span class="sec-tag">Лента кинозала</span>
+        <h2>Звёзды большого экрана</h2>
+        <p class="sec-lead">Листайте ленту стрелками, колесом мыши или перетаскиванием. Восемь проектов, которые сделали лемуров знаменитыми. <span class="text-mist/80">Постеры и логотипы — из Википедии, в образовательных целях.</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="mt-12 relative movies-wrap">
+    <button id="moviesPrev" class="movies-nav movies-nav-left" aria-label="Назад">‹</button>
+    <div id="moviesViewport" class="movies-viewport">
+      <div id="moviesTrack" class="flex gap-6 px-5 lg:px-[max(2rem,calc((100vw_-_1440px)/2_+_2rem))] w-max"></div>
+    </div>
+    <button id="moviesNext" class="movies-nav movies-nav-right" aria-label="Вперёд">›</button>
+  </div>
+</section>
+
+<!-- ============ 08 КНИГИ И МЕМЫ ============ -->
+<section id="books" class="section relative">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">08</span>
+      <div>
+        <span class="sec-tag">Бумага · интернет · игры</span>
+        <h2>Книги, мемы и игровые герои</h2>
+        <p class="sec-lead">От полевого определителя Миттермайера до «I like to move it, move it» — как лемуры заполонили культуру. <span class="text-mist/80">Обложки — Open Library, баннеры игр — Steam, в образовательных целях.</span></p>
+      </div>
+    </div>
+    <div id="booksGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12"></div>
+    <!-- цитаты-мемы -->
+    <div class="mt-10 relative bg-coal border-y border-white/5 py-3.5 overflow-hidden rounded-lg">
+      <div id="quotesTrack" class="marquee-track marquee-reverse flex items-center gap-10 whitespace-nowrap"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 ГАЛЕРЕЯ ============ -->
+<section id="gallery" class="section relative bg-coal/40">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">09</span>
+      <div>
+        <span class="sec-tag">31 фотография · Unsplash</span>
+        <h2>Галерея Мадагаскара</h2>
+        <p class="sec-lead">Лемуры, баобабы, каменный лес и закаты над проливом. Кликните по фотографии, чтобы открыть просмотрщик со стрелками.</p>
+      </div>
+    </div>
+    <div id="galleryGrid" class="gallery-grid mt-12"></div>
+  </div>
+</section>
+
+<!-- ============ 10 СЛОВАРЬ ============ -->
+<section id="glossary" class="section relative">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">10</span>
+      <div>
+        <span class="sec-tag">10 терминов · просто о сложном</span>
+        <h2>Словарь лемуроведа</h2>
+        <p class="sec-lead">Эндемик, тапетум, зубной гребень… Если какое-то слово в статьях поставило в тупик — оно живёт здесь, с объяснением без жаргона.</p>
+      </div>
+    </div>
+    <div id="glossaryGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mt-12"></div>
+  </div>
+</section>
+
+<!-- ============ 11 ЗООПАРКИ ============ -->
+<section id="zoos" class="section relative bg-coal/40">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">11</span>
+      <div>
+        <span class="sec-tag">Как увидеть вживую</span>
+        <h2>Лемуры рядом с вами</h2>
+        <p class="sec-lead">Крупнейшие лемурарии мира, зоопарки и — самое честное — их настоящий дом в дикой природе.</p>
+      </div>
+    </div>
+    <div id="zoosGrid" class="grid md:grid-cols-2 xl:grid-cols-4 gap-5 mt-12"></div>
+  </div>
+</section>
+
+<!-- ============ 12 ОХРАНА ============ -->
+<section id="save" class="section relative">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">12</span>
+      <div>
+        <span class="sec-tag">МСОП · 98% под угрозой</span>
+        <h2>Лемуры под угрозой</h2>
+        <p class="sec-lead">Остров теряет леса, и лемуры платят за это. Разбираемся в причинах и в том, что уже делается — спокойно, по-научному, без призывов к пожертвованиям.</p>
+      </div>
+    </div>
+
+    <div class="mt-12 grid xl:grid-cols-3 gap-6">
+      <div class="xl:col-span-1 flex flex-col gap-6">
+        <div class="stat-hero rounded-xl p-8 text-center">
+          <div class="text-6xl italic font-bold text-transparent bg-clip-text bg-gradient-to-b from-ember to-sun" style="font-family:'Playfair Display',serif">98%</div>
+          <p class="mt-3 text-sm text-mist leading-relaxed">видов лемуров находятся под угрозой исчезновения. Это самый высокий показатель среди всех групп млекопитающих планеты.</p>
+        </div>
+        <div class="glass rounded-xl p-7">
+          <h3 class="font-display font-bold text-lg">Кто занимается охраной</h3>
+          <ul class="mt-4 space-y-3 text-sm text-mist" id="orgsList"></ul>
+        </div>
+      </div>
+      <div class="xl:col-span-2 grid sm:grid-cols-2 gap-6" id="saveGrid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 ФАКТЫ ============ -->
+<section id="facts" class="section relative bg-coal/40">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">13</span>
+      <div>
+        <span class="sec-tag">16 карточек-перевёртышей</span>
+        <h2>Факты, которые взрывают мозг</h2>
+        <p class="sec-lead">Нажимайте на карточку — она перевернётся. Всё проверено по научным источникам.</p>
+      </div>
+    </div>
+    <div id="factsGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-12"></div>
+  </div>
+</section>
+
+<!-- ============ 14 КВИЗ ============ -->
+<section id="quiz" class="section relative">
+  <div class="container max-w-3xl">
+    <div class="sec-head justify-center text-center">
+      <span class="sec-num mx-auto">14</span>
+      <div>
+        <span class="sec-tag">5 вопросов</span>
+        <h2>Какой вы лемур?</h2>
+        <p class="sec-lead">Король компании, поющий философ, ночной гений или танцор? Пройдите тест — и узнайте свой тотем.</p>
+      </div>
+    </div>
+    <div id="quizBox" class="glass rounded-xl p-7 lg:p-10 mt-12"></div>
+  </div>
+</section>
+
+<!-- ============ ПОДВАЛ ============ -->
+<footer class="relative bg-coal border-t border-white/5 pt-16 pb-10 overflow-hidden">
+  <div class="container">
+    <div class="grid lg:grid-cols-3 gap-10">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-full border border-sun/50 bg-sun/10 flex items-center justify-center text-2xl">🐒</span>
+          <span class="text-2xl" style="font-family:'Playfair Display',serif"><span class="italic font-bold">Лемурия</span></span>
+        </div>
+        <p class="mt-4 text-mist text-sm leading-relaxed max-w-xs">
+          Научно-популярная энциклопедия о лемурах Мадагаскара.
+          Написана для школьников и взрослых — без скидок на возраст, но с уважением к любопытству.
+        </p>
+      </div>
+      <div>
+        <h4 class="text-[11px] tracking-[.3em] uppercase text-mist font-extrabold">Разделы</h4>
+        <ul class="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm" id="footerLinks"></ul>
+      </div>
+      <div>
+        <h4 class="text-[11px] tracking-[.3em] uppercase text-mist font-extrabold">Технологии</h4>
+        <div class="mt-4 flex flex-wrap gap-2" id="techChips"></div>
+        <p class="mt-5 text-xs text-mist/70 leading-relaxed">
+          Фотографии — Unsplash (иллюстративные), карты — OpenStreetMap/CARTO,
+          данные — IUCN Red List, Lemur Conservation Network.
+        </p>
+      </div>
+    </div>
+    <div class="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-mist/60">
+      <span>© 2026 Лемурия. Данные на сайте носят ознакомительный характер.</span>
+      <span>Сделано с 🖤 и 🐾 · «I like to move it, move it»</span>
+    </div>
+  </div>
+</footer>
+
+<button id="toTop" class="fixed bottom-6 right-6 z-[85] w-12 h-12 rounded-full bg-sun/15 border border-sun/40 text-sun backdrop-blur-xl opacity-0 pointer-events-none transition-all duration-300 hover:bg-sun/25 flex items-center justify-center" aria-label="Наверх">
+  <span data-lucide="arrow-up" class="w-5 h-5"></span>
+</button>
+
+<!-- ============ БИБЛИОТЕКИ (CDN) ============ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<!-- ============ СВОИ СКРИПТЫ ============ -->
+<script src="js/data.js"></script>
+<script src="js/globe.js"></script>
+<script src="js/main.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/map.js"></script>
+</body>
+</html>
